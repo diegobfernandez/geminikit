@@ -1,7 +1,6 @@
 (ns gemini-titan.example
-  (:require [clojure.string :as str]
-            [gemini-titan.server :as server])
-  (:import [java.net URI]))
+  (:require [gemini-titan.server :as server])
+  (:import [java.net URI InetSocketAddress]))
 
 (defn as-uri [s]
   (bean (URI. s)))
@@ -23,7 +22,8 @@
 
 (defn up []
   (when (not @server)
-    (reset! server (server/start (comp app router)))))
+    (reset! server (server/start (comp app router)
+                                 {:socket-address (InetSocketAddress. "0.0.0.0" 1965)}))))
 
 (defn down []
   (when @server
