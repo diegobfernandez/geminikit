@@ -1,5 +1,6 @@
 .cpcache
 .nrepl-port
+.lsp
 
 # macos
 .DS_Store
