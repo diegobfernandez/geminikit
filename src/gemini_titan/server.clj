@@ -4,7 +4,8 @@
             [manifold.deferred :as d]
             [gloss.io :as glossio]
             [aleph.netty]
-            [gemini-titan.codecs :refer [request-codec response-header-codec]]))
+            [gemini-titan.codecs :refer [request-codec response-header-codec]]) 
+  (:import [java.net InetSocketAddress]))
 
 (defn- wrap-duplex-stream
   "handle stream by decoding source and encoding sink with gemini codecs"
@@ -48,12 +49,15 @@
 (defn start
   "start a gemini server with app-fn handling all requests
    the return is a java.lang.Closable and can be used to stop the server"
-  ;; TODO receive port, ssl-context and other configurations for the server
-  [app]
-  (tcp/start-server
-    (fn [s info]
-      (let [handler (request-handler app)
-            s' (wrap-duplex-stream s)]
-        (handler s' info)))
-    {:port 1965
-     :ssl-context (aleph.netty/self-signed-ssl-context)}))
+  ([app]
+   (start app nil))
+  ([app {:keys [socket-address ssl-context]
+         :or {socket-address (InetSocketAddress. "localhost" 1965)
+              ssl-context (aleph.netty/self-signed-ssl-context)}}]
+   (tcp/start-server
+     (fn [s info]
+       (let [handler (request-handler app)
+             s' (wrap-duplex-stream s)]
+         (handler s' info)))
+     {:socket-address socket-address
+      :ssl-context ssl-context})))
