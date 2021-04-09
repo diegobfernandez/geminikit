@@ -5,12 +5,13 @@
 (defn as-uri [s]
   (bean (URI. s)))
 
+;; TODO move router to separate namespace
 (defn router
   [req]
   (update req :url as-uri))
 
 (defn app [req]
-  ;; silly check for presence of query string
+  ;; if query string is present it means the user responded
   (if (not (-> req :url :query))
     ;; if no query string is present request the user name
     {:status 10 :meta "What's your name?" :body ""}
@@ -21,14 +22,13 @@
 (defonce server (atom nil))
 
 (defn up []
-  (when (not @server)
+  (when-not @server
     (reset! server (server/start (comp app router)
                                  {:socket-address (InetSocketAddress. "0.0.0.0" 1965)}))))
 
 (defn down []
   (when @server
-    (.close @server)
-    (reset! server nil)))
+    (reset! server (.close @server))))
 
 (defn restart []
   (down)
