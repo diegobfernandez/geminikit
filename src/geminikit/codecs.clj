@@ -1,4 +1,4 @@
-(ns gemini-titan.codecs
+(ns geminikit.codecs
   (:require [gloss.core :as g]))
 
 ;; Gemini requests are a single CRLF-terminated line with the following structure: 

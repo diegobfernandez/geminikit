@@ -1,10 +1,10 @@
-(ns geminikit.titan.server
+(ns geminikit.server
   (:require [aleph.tcp :as tcp]
             [manifold.stream :as s]
             [manifold.deferred :as d]
             [gloss.io :as glossio]
             [aleph.netty]
-            [gemini-titan.codecs :refer [request-codec response-header-codec]]) 
+            [geminikit.codecs :refer [request-codec response-header-codec]]) 
   (:import [java.net InetSocketAddress]))
 
 (defn- wrap-duplex-stream

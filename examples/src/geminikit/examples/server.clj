@@ -1,5 +1,5 @@
-(ns gemini-titan.example
-  (:require [gemini-titan.server :as server])
+(ns geminikit.examples.server
+  (:require [geminikit.server :as server])
   (:import [java.net URI InetSocketAddress]))
 
 (defn as-uri [s]
