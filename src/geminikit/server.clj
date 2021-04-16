@@ -1,4 +1,4 @@
-(ns gemini-titan.server
+(ns geminikit.titan.server
   (:require [aleph.tcp :as tcp]
             [manifold.stream :as s]
             [manifold.deferred :as d]
