@@ -5,7 +5,14 @@
             [gloss.io :as glossio]
             [aleph.netty]
             [geminikit.codecs :refer [request-codec response-header-codec]]) 
-  (:import [java.net InetSocketAddress]))
+  (:import [java.net URI InetSocketAddress]))
+
+(defn- as-req-map [req info]
+  (let [uri (bean (URI. (:url req)))
+        req-data (select-keys uri [:scheme :host :path :query])
+        ;; How to get client certificate and pass it to the app?
+        server-data (select-keys info [:server-port :server-name])]
+    (merge req-data server-data)))
 
 (defn- wrap-duplex-stream
   "handle stream by decoding source and encoding sink with gemini codecs"
@@ -23,28 +30,28 @@
    the request map is passed to f which should return a response map"
   [f]
   ;; The second parameter contains informations about the server and the client
-  ;; Should it be passed along with the request to f?
-  (fn [s _]
+  (fn [s info]
     ;; take the request
     (-> (s/take! s)
         (d/chain
           ;; Process the request in another thread, it should return a response
-          (fn [req] (d/future (f req)))
+          ;; TODO Shoudl we really do it in another thread? List pros/cons and reconsider
+          ;; TODO Log request
+          (fn [req] (d/future (f (as-req-map req info))))
           ;; Once the transformation is complete, send the response to the client
-          (fn [rsp] (s/put! s rsp))
-          ;; if we were successful in our response, close connection, as per gemini spec
-          (fn [result]
-            (when result
-              (s/close! s))))
+          ;; TODO validate if result is valid
+          ;; TODO Log response
+          (fn [rsp] (s/put! s rsp)))
         ;; if there were any issues on the far end, send the appropriate error message
         ;; and close the connection
         (d/catch
+          ;; Inform client that an error ocurred on the server
           ;; TODO implement logging mechanism and pass ex to it
           ;; TODO make exception handling pluggable
-          (fn [_]
-            ;; TODO extract map to a helper function that validates the response
-            (s/put! s {:status 42 :meta "Something went wrong on our side."})
-            (s/close! s))))))
+          (fn [_] (s/put! s {:status 42 :meta "Something went wrong on our side." :body ""})))
+        (d/finally
+          ;; Gemini requires the connection to be closed always.
+          (fn [] (s/close! s))))))
 
 (defn start
   "start a gemini server with app-fn handling all requests

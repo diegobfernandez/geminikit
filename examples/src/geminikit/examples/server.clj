@@ -1,30 +1,41 @@
 (ns geminikit.examples.server
-  (:require [geminikit.server :as server])
-  (:import [java.net URI InetSocketAddress]))
+  (:require [geminikit.server :as server]
+            [clojure.java.io :as io])
+  (:import [java.net InetSocketAddress]))
 
-(defn as-uri [s]
-  (bean (URI. s)))
+(def articles-dir "./examples/src/geminikit/examples/articles")
+(def index-files ["/index.gemini" "/index.gmi"])
 
-;; TODO move router to separate namespace
-(defn router
-  [req]
-  (update req :url as-uri))
+(defn as-relative [s] (if (= "/" (subs s 0 1)) (subs s 1) s))
 
-(defn app [req]
-  ;; if query string is present it means the user responded
-  (if (not (-> req :url :query))
-    ;; if no query string is present request the user name
-    {:status 10 :meta "What's your name?" :body ""}
-    ;; otherwise say hello
-    {:status 20 :meta "text/gemini"
-     :body (str "Hello " (-> req :url :query))}))
+(defn file [p f] (io/file p (as-relative f)))
+
+(defn index-fallback [f]
+  (if (.isDirectory f)
+    (or (->> index-files
+           (map #(file f %))
+           (filter #(.isFile %))
+           (first))
+        f)
+    f))
+
+(defn not-found [msg] {:status 51 :meta msg :body ""})
+
+(defn success [meta body] {:status 20 :meta meta :body body})
+
+(defn gemtext [f] (success "text/gemini" (slurp (io/file f))))
+
+(defn app [{path :path}]
+  (let [f (index-fallback (file articles-dir path))] 
+    (if (.isFile f)
+      (gemtext f) 
+      (not-found "🤷 Couldn't find it."))))
 
 (defonce server (atom nil))
 
 (defn up []
   (when-not @server
-    (reset! server (server/start (comp app router)
-                                 {:socket-address (InetSocketAddress. "0.0.0.0" 1965)}))))
+    (reset! server (server/start app {:socket-address (InetSocketAddress. "0.0.0.0" 1965)}))))
 
 (defn down []
   (when @server
@@ -37,5 +48,4 @@
 (comment
   (up)
   (down)
-  (restart)
-  (.port @server))
+  (restart))
