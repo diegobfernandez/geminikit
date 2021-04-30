@@ -4,7 +4,8 @@
             [manifold.deferred :as d]
             [gloss.io :as glossio]
             [aleph.netty]
-            [geminikit.codecs :refer [request-codec response-header-codec]]) 
+            [geminikit.codecs :refer [request-codec
+                                      response-header-codec]]) 
   (:import [java.net URI InetSocketAddress]))
 
 (defn- as-req-map [req info]
@@ -48,7 +49,9 @@
           ;; Inform client that an error ocurred on the server
           ;; TODO implement logging mechanism and pass ex to it
           ;; TODO make exception handling pluggable
-          (fn [_] (s/put! s {:status 42 :meta "Something went wrong on our side." :body ""})))
+          (fn [_] (s/put! s {:status 42
+                             :meta "Something went wrong on our side."
+                             :body ""})))
         (d/finally
           ;; Gemini requires the connection to be closed always.
           (fn [] (s/close! s))))))
