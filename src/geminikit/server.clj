@@ -56,6 +56,19 @@
           ;; Gemini requires the connection to be closed always.
           (fn [] (s/close! s))))))
 
+(defn middleware
+  "Take fns as args and returna function that when called apply it's args
+  to each function of fns sequentially and returns as soon as one returns
+  a non nil value."
+  [& fns]
+  (fn [& args]
+    (reduce
+      (fn [_ f]
+        (when-let [x (apply f args)]
+          (reduced x)))
+      nil
+      fns)))
+
 (defn start
   "start a gemini server with app-fn handling all requests
    the return is a java.lang.Closable and can be used to stop the server"
