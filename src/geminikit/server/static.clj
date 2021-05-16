@@ -5,9 +5,10 @@
   ["index.gemini" "index.gmi"])
  
 (defn- as-relative [s]
-  (if (= "/" (subs s 0 1))
-    (subs s 1)
-    s))
+  (cond
+    (empty? s) s
+    (= "/" (subs s 0 1)) (subs s 1)
+    :else s))
  
 (defn- file
   ([f] (io/file f))
@@ -33,6 +34,6 @@
       (when (.isFile f)
         {:status 20
          :meta "text/gemini;charset=UTF-8"
-         ;; TODO instead of slurping, return a reader/file/stream
+         ;; TODO instead of slurping, return File
          :body (slurp f)}))))
  
