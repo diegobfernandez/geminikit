@@ -1,6 +1,7 @@
 {:deps
  {org.clojure/clojure {:mvn/version "1.10.2"}
   aleph/aleph {:mvn/version "0.4.6"}
+  byte-streams/byte-streams {:mvn/version "0.2.5-alpha2"}
   gloss/gloss {:mvn/version "0.2.6"}
   io.netty/netty-all {:mvn/version "4.1.59.Final"}}
  :aliases

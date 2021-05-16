@@ -4,12 +4,12 @@
             [manifold.deferred :as d]
             [gloss.io :as glossio]
             [aleph.netty]
-            [geminikit.codecs :refer [request-codec
+            [geminikit.codecs :refer [stream->request
                                       response-header-codec]]) 
   (:import [java.net URI InetSocketAddress]))
 
 (defn- as-req-map [req info]
-  (let [uri (bean (URI. (:url req)))
+  (let [uri (bean (URI. req))
         req-data (select-keys uri [:scheme :host :path :query])
         ;; How to get client certificate and pass it to the app?
         server-data (select-keys info [:server-port :server-name])]
@@ -24,7 +24,7 @@
       s)
     (s/splice
       out
-      (glossio/decode-stream s request-codec))))
+      (stream->request s))))
 
 (defn- request-handler
   "create a request handler from a function f.
@@ -44,7 +44,6 @@
           ;; TODO Log response
           (fn [rsp] (s/put! s rsp)))
         ;; if there were any issues on the far end, send the appropriate error message
-        ;; and close the connection
         (d/catch
           ;; Inform client that an error ocurred on the server
           ;; TODO implement logging mechanism and pass ex to it
@@ -84,3 +83,4 @@
          (handler s' info)))
      {:socket-address socket-address
       :ssl-context ssl-context})))
+

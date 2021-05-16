@@ -1,15 +1,32 @@
 (ns geminikit.codecs
-  (:require [gloss.core :as g]))
+  (:require [gloss.core :as g]
+            [manifold.stream :as s]
+            [byte-streams :as b]))
+
+(defn has-delimiter? [bs]
+  (true? (reduce (fn [acc cur]
+                   (if (= [(byte \return) (byte \newline)] [acc cur])
+                     (reduced true)
+                     cur))
+               bs)))
+
+(defn stream-read-line
+  ;; TODO check if delimiter is at the very end of s
+  [s]
+  (s/buffer (fn [m] (if (has-delimiter? m) 1 0)) 1 s))
 
 ;; Gemini requests are a single CRLF-terminated line with the
 ;; following structure: 
 ;; <URL><CR><LF>
 ;; <URL> is a UTF-8 encoded absolute URL, including a scheme,
 ;; of maximum length 1024 bytes.
-(def request-codec
-  (g/compile-frame
-    (g/ordered-map
-      :url (g/string :utf-8 :delimiters ["\r\n"]))))
+(defn stream->request [conn]
+  (->> conn
+       stream-read-line
+       (s/transform
+         (comp
+           (map b/to-string)
+           (map #(subs % 0 (- (count %) 2)))))))
 
 ;; Gemini response consist of a single CRLF-terminated header line,
 ;; optionally followed by a response body. 
