@@ -1,7 +1,12 @@
 (ns geminikit.codecs
-  (:require [gloss.core :as g]
+  (:require [clojure.java.io :as io]
             [manifold.stream :as s]
             [byte-streams :as b]))
+
+(defn body-seq [x]
+  (cond
+    (instance? String x) [x]
+    :else (line-seq (io/reader x))))
 
 (defn has-delimiter? [bs]
   (true? (reduce (fn [acc cur]
@@ -39,9 +44,13 @@
 ;; <META> is a UTF-8 encoded string of maximum length 1024 bytes,
 ;; whose meaning is <STATUS> dependent.
 ;; <STATUS> and <META> are separated by a single space character.
-(def response-header-codec
-  (g/compile-frame
-    (g/ordered-map
-      :status (g/string-integer :utf-8 :suffix " ")
-      :meta (g/string :utf-8 :suffix "\r\n")
-      :body (g/string :utf-8))))
+(defn response->stream [conn]
+  (let [dst (s/stream)]
+    (s/connect-via
+      conn
+      (fn [{:keys [status meta body] :or {body ""}}]
+        (let [header (str status " " meta "\r\n")
+              msgs (concat [header] (body-seq body))]
+          (s/put-all! dst msgs)))
+      dst)
+    dst))

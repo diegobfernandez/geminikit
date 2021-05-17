@@ -34,6 +34,5 @@
       (when (.isFile f)
         {:status 20
          :meta "text/gemini;charset=UTF-8"
-         ;; TODO instead of slurping, return File
-         :body (slurp f)}))))
+         :body f}))))
  

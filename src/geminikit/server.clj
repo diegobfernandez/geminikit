@@ -2,10 +2,9 @@
   (:require [aleph.tcp :as tcp]
             [manifold.stream :as s]
             [manifold.deferred :as d]
-            [gloss.io :as glossio]
             [aleph.netty]
             [geminikit.codecs :refer [stream->request
-                                      response-header-codec]]) 
+                                      response->stream]]) 
   (:import [java.net URI InetSocketAddress]))
 
 (defn- as-req-map [req info]
@@ -20,7 +19,7 @@
   [s]
   (let [out (s/stream)]
     (s/connect
-      (s/map #(glossio/encode response-header-codec %) out)
+      (response->stream out)
       s)
     (s/splice
       out

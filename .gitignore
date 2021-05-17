@@ -4,3 +4,5 @@
 
 # macos
 .DS_Store
+examples/src/geminikit/examples/articles
+!examples/src/geminikit/examples/articles/index.gemini
