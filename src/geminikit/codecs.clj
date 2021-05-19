@@ -3,10 +3,13 @@
             [manifold.stream :as s]
             [byte-streams :as b]))
 
+(defn byte-seq [^java.io.InputStream is size]
+  (b/to-byte-buffers is {:chunk-size size}))
+
 (defn body-seq [x]
   (cond
-    (instance? String x) [x]
-    :else (line-seq (io/reader x))))
+    (instance? String x) (body-seq (.getBytes x))
+    :else (io/input-stream x)))
 
 (defn has-delimiter? [bs]
   (true? (reduce (fn [acc cur]
@@ -45,12 +48,17 @@
 ;; whose meaning is <STATUS> dependent.
 ;; <STATUS> and <META> are separated by a single space character.
 (defn response->stream [conn]
-  (let [dst (s/stream)]
+  (let [dst (s/stream)
+        is (atom nil)]
     (s/connect-via
       conn
       (fn [{:keys [status meta body] :or {body ""}}]
+        (reset! is (body-seq body))
         (let [header (str status " " meta "\r\n")
-              msgs (concat [header] (body-seq body))]
+              msgs (concat [header] (byte-seq @is 512))]
           (s/put-all! dst msgs)))
       dst)
+    (s/on-closed dst (fn []
+                       (when @is
+                         (.close @is))))
     dst))
