@@ -4,7 +4,7 @@
             [byte-streams :as b]))
 
 (defn byte-seq [^java.io.InputStream is size]
-  (b/to-byte-buffers is {:chunk-size size}))
+  (b/to-byte-buffers is {:chunk-size size :direct? true}))
 
 (defn body-seq [x]
   (cond
@@ -55,7 +55,8 @@
       (fn [{:keys [status meta body] :or {body ""}}]
         (reset! is (body-seq body))
         (let [header (str status " " meta "\r\n")
-              msgs (concat [header] (byte-seq @is 512))]
+              msgs (concat [header] (byte-seq @is 4096))]
+          (println (count msgs))
           (s/put-all! dst msgs)))
       dst)
     (s/on-closed dst (fn []
