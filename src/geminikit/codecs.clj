@@ -56,7 +56,6 @@
         (reset! is (body-seq body))
         (let [header (str status " " meta "\r\n")
               msgs (concat [header] (byte-seq @is 4096))]
-          (println (count msgs))
           (s/put-all! dst msgs)))
       dst)
     (s/on-closed dst (fn []
