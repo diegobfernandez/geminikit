@@ -6,10 +6,10 @@ I created this project as a way to serve a personal blog (glog) but my desire is
 
 ## Roadmap
 
-- [ ] Server (IN PROGRESS)
-  - [ ] Ring-like req/rsp maps. (IN PROGRESS)
-  - [ ] Ring-like middlewares.
-  - [ ] Middleware for serving files from disk. (IN PROGRESS)
+- [x] Server
+  - [x] Ring-like req/rsp maps.
+  - [ ] Ring-like middlewares. (IN EVALUATION)
+  - [x] Middleware for serving files from disk.
 - [ ] Client
 - [ ] Gemtext
   - [ ] HTML<->Gemtext converter
@@ -22,4 +22,4 @@ A gemini server based on aleph with a ring-like req/rsp map model.
 ### Serving files
 
 Check the examples folder on how to server files from your disk.
-It's good to run a simple capsule based on statis files.
+It's good to run a simple capsule based on static files.
