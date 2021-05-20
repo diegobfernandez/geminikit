@@ -4,7 +4,13 @@
             [byte-streams :as b]))
 
 (defn byte-seq [^java.io.InputStream is size]
-  (b/to-byte-buffers is {:chunk-size size :direct? true}))
+  (let [ib (byte-array size)]
+    ((fn step []
+       (lazy-seq
+         (let [n (.read is ib)]
+           (when (not= -1 n)
+             (let [bb (java.nio.ByteBuffer/wrap ib 0 n)]
+               (cons bb (step))))))))))
 
 (defn body-seq [x]
   (cond
