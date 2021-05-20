@@ -4,40 +4,32 @@
             [manifold.deferred :as d]
             [aleph.netty]
             [geminikit.codecs :refer [stream->request
-                                      response->stream]]) 
-  (:import [java.net URI InetSocketAddress]))
-
-(defn- as-req-map [req info]
-  (let [uri (bean (URI. req))
-        req-data (select-keys uri [:scheme :host :path :query])
-        ;; How to get client certificate and pass it to the app?
-        server-data (select-keys info [:server-port :server-name])]
-    (merge req-data server-data)))
+                                      response->stream]])) 
 
 (defn- wrap-duplex-stream
   "handle stream by decoding source and encoding sink with gemini codecs"
-  [s]
+  [s info]
   (let [out (s/stream)]
     (s/connect
       (response->stream out)
       s)
     (s/splice
       out
-      (stream->request s))))
+      (stream->request s info))))
 
 (defn- request-handler
   "create a request handler from a function f.
    the request map is passed to f which should return a response map"
   [f]
   ;; The second parameter contains informations about the server and the client
-  (fn [s info]
+  (fn [s]
     ;; take the request
     (-> (s/take! s)
         (d/chain
           ;; Process the request in another thread, it should return a response
           ;; TODO Shoudl we really do it in another thread? List pros/cons and reconsider
           ;; TODO Log request
-          (fn [req] (d/future (f (as-req-map req info))))
+          (fn [req] (d/future (f req)))
           ;; Once the transformation is complete, send the response to the client
           ;; TODO validate if result is valid
           ;; TODO Log response
@@ -78,8 +70,8 @@
    (tcp/start-server
      (fn [s info]
        (let [handler (request-handler app)
-             s' (wrap-duplex-stream s)]
-         (handler s' info)))
+             s' (wrap-duplex-stream s info)]
+         (handler s')))
      {:socket-address socket-address
       :ssl-context ssl-context})))
 

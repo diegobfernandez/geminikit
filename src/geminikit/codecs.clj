@@ -1,9 +1,10 @@
 (ns geminikit.codecs
   (:require [clojure.java.io :as io]
             [manifold.stream :as s]
-            [byte-streams :as b]))
+            [byte-streams :as b])
+  (:import [java.net URI]))
 
-(defn byte-seq [^java.io.InputStream is size]
+(defn- byte-seq [^java.io.InputStream is size]
   (let [ib (byte-array size)]
     ((fn step []
        (lazy-seq
@@ -12,35 +13,44 @@
              (let [bb (java.nio.ByteBuffer/wrap ib 0 n)]
                (cons bb (step))))))))))
 
-(defn body-seq [x]
+(defn- body-seq [x]
   (cond
     (instance? String x) (body-seq (.getBytes x))
     :else (io/input-stream x)))
 
-(defn has-delimiter? [bs]
+(defn- has-delimiter? [bs]
   (true? (reduce (fn [acc cur]
                    (if (= [(byte \return) (byte \newline)] [acc cur])
                      (reduced true)
                      cur))
                bs)))
 
-(defn stream-read-line
+(defn- stream-read-line
   ;; TODO check if delimiter is at the very end of s
   [s]
   (s/buffer (fn [m] (if (has-delimiter? m) 1 0)) 1 s))
+
+(defn- as-req-map [req info]
+  (let [uri (bean (URI. req))
+        req-data (select-keys uri [:scheme :host :path :query])
+        ;; How to get client certificate and pass it to the app?
+        server-data (select-keys info [:server-port :server-name])]
+    (merge req-data server-data)))
 
 ;; Gemini requests are a single CRLF-terminated line with the
 ;; following structure: 
 ;; <URL><CR><LF>
 ;; <URL> is a UTF-8 encoded absolute URL, including a scheme,
 ;; of maximum length 1024 bytes.
-(defn stream->request [conn]
+;; TODO check for max len
+(defn stream->request [conn info]
   (->> conn
        stream-read-line
        (s/transform
          (comp
            (map b/to-string)
-           (map #(subs % 0 (- (count %) 2)))))))
+           (map #(subs % 0 (- (count %) 2)))
+           (map #(as-req-map % info))))))
 
 ;; Gemini response consist of a single CRLF-terminated header line,
 ;; optionally followed by a response body. 
