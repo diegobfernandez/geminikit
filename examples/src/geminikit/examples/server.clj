@@ -1,7 +1,6 @@
 (ns geminikit.examples.server
   (:require [geminikit.server :as server]
-            [geminikit.server.static :as static])
-  (:import [java.net InetSocketAddress]))
+            [geminikit.server.static :as static]))
 
 (def articles-dir "./examples/src/geminikit/examples/articles")
 
@@ -17,10 +16,7 @@
 
 (defn up []
   (when-not @server
-    (reset! server
-            (server/start app {:socket-address
-                               (InetSocketAddress. "0.0.0.0"
-                                                   1965)}))))
+    (reset! server (server/start app))))
 
 (defn down []
   (when @server

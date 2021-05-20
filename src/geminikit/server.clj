@@ -3,8 +3,7 @@
             [manifold.stream :as s]
             [manifold.deferred :as d]
             [aleph.netty]
-            [geminikit.codecs :refer [stream->request
-                                      response->stream]])) 
+            [geminikit.codecs :refer [stream->request response->stream]]))
 
 (defn- wrap-duplex-stream
   "handle stream by decoding source and encoding sink with gemini codecs"
@@ -64,14 +63,15 @@
    the return is a java.lang.Closable and can be used to stop the server"
   ([app]
    (start app nil))
-  ([app {:keys [socket-address ssl-context]
-         :or {socket-address (InetSocketAddress. "localhost" 1965)
+  ([app {:keys [port socket-address ssl-context]
+         :or {port 1965
               ssl-context (aleph.netty/self-signed-ssl-context)}}]
    (tcp/start-server
      (fn [s info]
        (let [handler (request-handler app)
              s' (wrap-duplex-stream s info)]
          (handler s')))
-     {:socket-address socket-address
+     {:port port
+      :socket-address socket-address
       :ssl-context ssl-context})))
 
