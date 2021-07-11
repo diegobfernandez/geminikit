@@ -12,8 +12,12 @@ I created this project as a way to serve a personal blog (glog) but my desire is
   - [x] Middleware for serving files from disk.
 - [ ] Client
 - [ ] Gemtext
-  - [ ] HTML<->Gemtext converter
-  - [ ] Markdowm<->Gemtext converter
+  - [x] Parse Gemtext into data (gemdata)
+  - [ ] gemdata to gemtext
+  - [x] gemdata to hiccup
+  - [ ] hiccup to gemdata
+  - [ ] gemdata to markdown
+  - [ ] markdown to gemdata
 
 ## Server
 
